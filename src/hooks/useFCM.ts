@@ -12,56 +12,56 @@ export const useFCM = () => {
   const { currentUser } = useAuth();
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>(Notification.permission);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const requestPermissionAndToken = async () => {
+  const requestPermissionAndToken = async () => {
+      setError(null);
       try {
-        if (permission === 'default') {
-          const perm = await Notification.requestPermission();
-          setPermission(perm);
-          
-          if (perm !== 'granted') {
-            console.log('Notification permission denied');
-            return;
-          }
+        const perm = await Notification.requestPermission();
+        setPermission(perm);
+        
+        if (perm !== 'granted') {
+          console.log('Notification permission denied');
+          return;
         }
 
-        if (permission === 'granted' || Notification.permission === 'granted') {
-            // Register service worker first if not relying on default registration
-            // const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-            
+        if (perm === 'granted') {
             const token = await getToken(messaging, {
               vapidKey: VAPID_KEY
-              // serviceWorkerRegistration: registration
             });
             
             if (token) {
               console.log('FCM Token:', token);
               setFcmToken(token);
               
-              // Update user profile with new token
-              const userRef = doc(db, 'users', currentUser.uid);
-              await updateDoc(userRef, {
-                fcmTokens: arrayUnion(token)
-              });
+              if (currentUser) {
+                  // Update user profile with new token
+                  const userRef = doc(db, 'users', currentUser.uid);
+                  await updateDoc(userRef, {
+                    fcmTokens: arrayUnion(token)
+                  });
+              }
             }
         }
       } catch (error) {
         console.error('Error initializing FCM:', error);
+        setError(error instanceof Error ? error.message : 'Failed to initialize notifications');
       }
     };
 
-    requestPermissionAndToken();
-
-  }, [currentUser, permission]);
+  useEffect(() => {
+    if (!currentUser) return;
+    // Auto-request on mount if default, or just check token if granted
+    if (Notification.permission === 'granted') {
+        requestPermissionAndToken();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     // Handle foreground messages
     const unsubscribe = onMessage(messaging, (payload) => {
       console.log('Foreground message received:', payload);
-      const { title, body } = payload.notification || {};
+      const { title } = payload.notification || {};
       
       // If the app is in foreground, we might want to show a toast or custom UI
       // Browsers usually don't show system notification if app is focused
@@ -78,6 +78,6 @@ export const useFCM = () => {
     return () => unsubscribe();
   }, []);
 
-  return { fcmToken, permission };
+  return { fcmToken, permission, requestPermission: requestPermissionAndToken, error };
 };
 

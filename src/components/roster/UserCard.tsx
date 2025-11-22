@@ -17,7 +17,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, onCall }) => {
     }
   };
 
-  const isCallEnabled = user.status === 'available';
+  const isCallEnabled = user.status === 'online' || user.status === 'available';
 
   return (
     <div className="bg-white border rounded-lg shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow">

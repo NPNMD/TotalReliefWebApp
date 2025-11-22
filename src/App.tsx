@@ -7,6 +7,7 @@ import { FCMManager } from './components/FCMManager';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { AdminPage } from './pages/admin/AdminPage';
+import { SettingsPage } from './pages/settings/SettingsPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, loading } = useAuth();
@@ -56,7 +57,15 @@ function App() {
                 } 
               />
               <Route 
-                path="/admin" 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin"  
                 element={
                   <AdminRoute>
                     <AdminPage />

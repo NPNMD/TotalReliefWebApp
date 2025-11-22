@@ -9,7 +9,8 @@ export interface UserProfile {
   phoneNumber?: string;
   photoURL?: string;
   createdAt: any; 
-  status: 'available' | 'busy' | 'away' | 'offline';
+  status: 'online' | 'available' | 'busy' | 'away' | 'offline';
+  isActive?: boolean;
   fcmTokens?: string[];
   notificationPreferences?: {
     pushEnabled: boolean;

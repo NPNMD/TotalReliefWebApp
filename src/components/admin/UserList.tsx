@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { UserProfile } from '../../types';
-import { Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Trash2, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { showToast } from '../../utils/toast';
+import { EditUserForm } from './EditUserForm';
 
 export const UserList = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     // Real-time subscription to users collection
@@ -96,18 +98,20 @@ export const UserList = () => {
                 {user.role === 'facility' ? user.facilityId : '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                 {/* @ts-ignore - handling the extended property we added in CreateUserForm */}
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {/* @ts-ignore */}
-                  {user.isActive ? 'Active' : 'Disabled'}
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {user.isActive !== false ? 'Active' : 'Disabled'}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end space-x-2">
+                <button
+                    onClick={() => setEditingUser(user)}
+                    className="text-blue-600 hover:text-blue-900" title="Edit User">
+                    <Pencil className="w-5 h-5" />
+                </button>
                 <button 
-                    onClick={() => toggleUserStatus(user.uid, (user as any).isActive)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-4" title="Toggle Status">
-                    {/* @ts-ignore */}
-                    {user.isActive ? <XCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                    onClick={() => toggleUserStatus(user.uid, !!user.isActive)}
+                    className="text-indigo-600 hover:text-indigo-900" title="Toggle Status">
+                    {user.isActive !== false ? <XCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
                 </button>
                 <button 
                     onClick={() => deleteUser(user.uid)}
@@ -119,6 +123,14 @@ export const UserList = () => {
           ))}
         </tbody>
       </table>
+
+      {editingUser && (
+        <EditUserForm
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSuccess={() => setEditingUser(null)}
+        />
+      )}
     </div>
   );
 };

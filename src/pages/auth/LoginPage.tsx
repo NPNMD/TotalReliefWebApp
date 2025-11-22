@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../../config/firebase';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, UserPlus, X } from 'lucide-react';
+import { Lock, Mail, X } from 'lucide-react';
 import { showToast } from '../../utils/toast';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
@@ -24,34 +22,11 @@ export const LoginPage = () => {
     setLoading(true);
 
     try {
-      if (isRegistering) {
-        // Register new Admin
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const uid = userCredential.user.uid;
-
-        // Create Admin Profile in Firestore
-        await setDoc(doc(db, 'users', uid), {
-          uid,
-          email,
-          displayName: displayName || email.split('@')[0],
-          role: 'admin',
-          status: 'online',
-          createdAt: serverTimestamp(),
-          isActive: true,
-          notificationPreferences: {
-            smsEnabled: true,
-            emailEnabled: true,
-            inAppSoundsEnabled: true
-          }
-        });
-
-        console.log("Admin account created successfully");
-        navigate('/admin');
-      } else {
-        // Normal Login
-        await signInWithEmailAndPassword(auth, email, password);
-        navigate('/dashboard');
-      }
+      // Normal Login
+      // Set persistence based on "Remember Me"
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
@@ -101,25 +76,12 @@ export const LoginPage = () => {
             Total Relief Video Supervision
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {isRegistering ? 'Create your Admin Account' : 'Sign in to your account'}
+            Sign in to your account
           </p>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
-            {isRegistering && (
-              <div className="relative mb-4">
-                 <input
-                  type="text"
-                  required
-                  className="appearance-none rounded-md relative block w-full px-4 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                  placeholder="Full Name"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                />
-              </div>
-            )}
-            
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <input
@@ -148,17 +110,31 @@ export const LoginPage = () => {
             <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">{error}</div>
           )}
 
-          {!isRegistering && (
-            <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                Remember me
+              </label>
+            </div>
+
+            <div className="text-sm">
               <button
                 type="button"
                 onClick={() => setShowResetModal(true)}
-                className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+                className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Forgot password?
               </button>
             </div>
-          )}
+          </div>
 
           <div>
             <button
@@ -166,27 +142,7 @@ export const LoginPage = () => {
               disabled={loading}
               className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary`}
             >
-              {loading ? (isRegistering ? 'Creating Account...' : 'Signing in...') : (isRegistering ? 'Create Admin Account' : 'Sign in')}
-            </button>
-          </div>
-          
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegistering(!isRegistering);
-                setError('');
-              }}
-              className="text-sm text-blue-600 hover:text-blue-500 font-medium flex items-center justify-center mx-auto"
-            >
-              {isRegistering ? (
-                'Already have an account? Sign in'
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 mr-1" />
-                  First time? Create Admin Account
-                </>
-              )}
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>
