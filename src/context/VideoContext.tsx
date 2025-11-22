@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import DailyIframe, { DailyCall } from '@daily-co/daily-js';
 import { showToast } from '../utils/toast';
 
@@ -23,20 +23,36 @@ export const useVideo = () => useContext(VideoContext);
 export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [callObject, setCallObject] = useState<DailyCall | null>(null);
   const [isInCall, setIsInCall] = useState(false);
+  const [isVideoVisible, setIsVideoVisible] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Initialize Daily call object on mount
-    const co = DailyIframe.createCallObject();
-    setCallObject(co);
+  // Helper to create a fresh call instance
+  const createCallInstance = useCallback(() => {
+      if (!videoContainerRef.current) return null;
 
-    // Event listeners
-    co.on('joined-meeting', () => setIsInCall(true))
-      .on('left-meeting', () => setIsInCall(false))
-      .on('error', (e) => console.error('Daily error:', e));
+      const co = DailyIframe.createFrame(videoContainerRef.current, {
+        showLeaveButton: true,
+        iframeStyle: {
+          width: '100%',
+          height: '100%',
+          border: '0',
+        }
+      });
+      
+      // Attach listeners
+      co.on('joined-meeting', () => {
+          setIsInCall(true);
+      })
+      .on('left-meeting', () => {
+          setIsInCall(false);
+          setIsVideoVisible(false);
+      })
+      .on('error', (e) => {
+          console.error('Daily error:', e);
+          showToast.error('Video call error occurred');
+      });
 
-    return () => {
-      co.destroy();
-    };
+      return co;
   }, []);
 
   const createRoom = useCallback(async () => {
@@ -48,8 +64,6 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      // NOTE: In a production app, room creation should happen on the backend 
-      // to keep the API key secure. This is client-side only for MVP.
       const response = await fetch('https://api.daily.co/v1/rooms', {
         method: 'POST',
         headers: {
@@ -59,9 +73,8 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         body: JSON.stringify({
           properties: {
             enable_chat: true,
-            enable_screenshare: false, // As per design doc
-            max_participants: 2, // 1:1 calls
-             // exp: Math.round(Date.now() / 1000) + 3600 // Expires in 1 hour
+            enable_screenshare: false,
+            max_participants: 2,
           }
         })
       });
@@ -78,22 +91,64 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
-  const joinCall = useCallback((url: string) => {
-    if (callObject) {
-      callObject.join({ url });
+  const joinCall = useCallback(async (url: string) => {
+    let currentCo = callObject;
+    
+    if (currentCo) {
+        console.log("Destroying existing call object before joining new one...");
+        await currentCo.destroy();
+        currentCo = null;
     }
-  }, [callObject]);
 
-  const leaveCall = useCallback(() => {
+    // 1. Show the container immediately
+    setIsVideoVisible(true);
+
+    // 2. Create new instance inside the container
+    const newCo = createCallInstance();
+    if (!newCo) {
+        console.error("Failed to create call instance - container ref missing");
+        return;
+    }
+    setCallObject(newCo);
+    
+    try {
+        await newCo.join({ url });
+    } catch (e) {
+        console.error("Error joining call:", e);
+        showToast.error("Failed to join video call.");
+        await newCo.destroy();
+        setCallObject(null);
+        setIsVideoVisible(false);
+    }
+  }, [callObject, createCallInstance]);
+
+  const leaveCall = useCallback(async () => {
     if (callObject) {
-      callObject.leave();
+      await callObject.leave();
+      await callObject.destroy();
+      setCallObject(null);
+      setIsInCall(false);
+      setIsVideoVisible(false);
     }
   }, [callObject]);
 
   return (
     <VideoContext.Provider value={{ callObject, createRoom, joinCall, leaveCall, isInCall }}>
       {children}
+      {/* Dedicated Video Container Overlay */}
+      <div 
+        ref={videoContainerRef}
+        style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 99999,
+            backgroundColor: '#000', // Black background while loading
+            display: isVideoVisible ? 'block' : 'none',
+        }}
+      />
     </VideoContext.Provider>
   );
 };
-
