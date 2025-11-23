@@ -1,6 +1,6 @@
 # Project Roadmap: Medical Video Supervision & Paging System
 
-**Status:** Phase 1 (MVP) - Initialization
+**Status:** Phase 1 (MVP) - Finishing Touches
 **Based on:** Technical Design Document v1.0
 
 ---
@@ -13,10 +13,10 @@
     - [x] Initialize Firebase Project (`totalreliefmd`)
     - [x] Initialize React App (Vite, TypeScript, TailwindCSS)
     - [x] Configure Directory Structure (Feature-based modular architecture)
-    - [ ] Set up GitHub Repository & CI/CD Actions
+    - [ ] Set up GitHub Repository & CI/CD Actions (External)
     - [x] Configure Environment Variables (.env) ✅
 
-**Status:** ✅ 80% Complete - Infrastructure is solid. Missing GitHub CI/CD setup.
+**Status:** ✅ 80% Complete - Infrastructure is solid. GitHub/CI/CD is pending external setup.
 
 ### 2. Authentication & User Management
 - [x] **Firebase Auth Integration**
@@ -80,7 +80,7 @@
     - [x] Implement "Test Push Notification" button
     - [x] Track multiple device tokens per user (fcmTokens array in UserProfile)
     - [ ] Handle token expiry and automatic refresh
-- [x] **PWA Configuration**
+- [ ] **PWA Configuration**
     - [x] Configure manifest.json for PWA installation
     - [ ] Add install prompts for mobile employees
     - [ ] Optimize notification icons and badges
@@ -150,4 +150,3 @@
 - [ ] **Integrations**
     - [ ] EHR Integration
     - [ ] Native Mobile Apps (React Native)
-
