@@ -72,12 +72,42 @@ async function sendNotification(userId: string, payload: { title: string, body: 
             body: payload.body
         },
         data: payload.data,
+        webpush: {
+            notification: {
+                actions: payload.data.type === 'incoming_call' ? [
+                    { action: 'answer', title: 'Answer' },
+                    { action: 'decline', title: 'Decline' }
+                ] : [],
+                requireInteraction: true,
+                icon: '/icon.png' // Make sure icon is available
+            },
+            fcmOptions: {
+                link: '/dashboard'
+            }
+        },
         tokens: fcmTokens
     };
 
     try {
         const response = await admin.messaging().sendEachForMulticast(message);
         console.log('FCM sent:', response.successCount, 'success', response.failureCount, 'fail');
+
+        // Cleanup invalid tokens
+        if (response.failureCount > 0) {
+            const failedTokens: string[] = [];
+            response.responses.forEach((resp, idx) => {
+                if (!resp.success) {
+                    failedTokens.push(fcmTokens[idx]);
+                }
+            });
+
+            if (failedTokens.length > 0) {
+                console.log('Removing invalid tokens:', failedTokens);
+                await admin.firestore().collection('users').doc(userId).update({
+                    fcmTokens: admin.firestore.FieldValue.arrayRemove(...failedTokens)
+                });
+            }
+        }
 
         if (callRef && payload.data.type === 'incoming_call') {
              await callRef.update({

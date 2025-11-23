@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { auth } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
-import { usePresence } from '../../hooks/usePresence'; // Import presence hook
-import { LogOut, Users, History, Settings, Shield, Menu, X, HelpCircle } from 'lucide-react';
+import { usePresence } from '../../hooks/usePresence';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { LogOut, Users, History, Settings, Shield, Menu, X, HelpCircle, Download } from 'lucide-react';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isInstallable, install } = usePWAInstall();
   
   // Initialize presence tracking for current user
   usePresence(currentUser?.uid);
@@ -69,6 +71,16 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
           {isAdmin && (
             <NavItem to="/admin" icon={Shield}>Admin Panel</NavItem>
           )}
+          
+          {isInstallable && (
+            <button
+              onClick={install}
+              className="flex w-full items-center px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-md"
+            >
+              <Download className="w-5 h-5 mr-3" />
+              Install App
+            </button>
+          )}
         </nav>
 
         <div className="p-4 border-t">
@@ -117,6 +129,19 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               
               {isAdmin && (
                 <NavItem to="/admin" icon={Shield}>Admin Panel</NavItem>
+              )}
+
+              {isInstallable && (
+                <button
+                  onClick={() => {
+                    install();
+                    setIsSidebarOpen(false);
+                  }}
+                  className="flex w-full items-center px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-md"
+                >
+                  <Download className="w-5 h-5 mr-3" />
+                  Install App
+                </button>
               )}
             </nav>
 

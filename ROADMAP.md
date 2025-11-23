@@ -1,6 +1,6 @@
 # Project Roadmap: Medical Video Supervision & Paging System
 
-**Status:** Phase 1 (MVP) - Finishing Touches
+**Status:** Phase 1 (MVP) - Complete (Pending Testing)
 **Based on:** Technical Design Document v1.0
 
 ---
@@ -72,20 +72,20 @@
     - [x] Request notification permission on first login (company policy)
     - [x] Trigger FCM push on "Missed Call" (Timeout)
     - [x] Trigger FCM push on "No Acknowledgement" (5s delay)
-    - [ ] Implement rich notifications with action buttons (Answer/Decline)
-    - [ ] Handle notification click actions (open app, answer/decline)
+    - [x] Implement rich notifications with action buttons (Answer/Decline)
+    - [x] Handle notification click actions (open app, answer/decline)
 - [x] **User Settings & Management**
     - [x] Create notification preferences page
     - [x] Display FCM token registration status
     - [x] Implement "Test Push Notification" button
     - [x] Track multiple device tokens per user (fcmTokens array in UserProfile)
-    - [ ] Handle token expiry and automatic refresh
-- [ ] **PWA Configuration**
+    - [x] Handle token expiry and automatic refresh (Cleanup logic implemented)
+- [x] **PWA Configuration**
     - [x] Configure manifest.json for PWA installation
-    - [ ] Add install prompts for mobile employees
+    - [x] Add install prompts for mobile employees
     - [ ] Optimize notification icons and badges
 
-**Status:** ✅ 80% Complete - Core FCM infrastructure works. Settings page added. Missing: rich notifications, token refresh.
+**Status:** ✅ 95% Complete - Rich notifications and PWA install prompts added.
 
 ### 6. Polish & QA
 - [ ] **UI/UX Polish**
@@ -99,7 +99,7 @@
 
 ---
 
-## 📊 Phase 1 Overall Status: ~95% Complete
+## 📊 Phase 1 Overall Status: ~98% Complete
 
 **What's Working:**
 ✅ Firebase project fully configured (Auth, Firestore, RTDB, FCM, Cloud Functions)
@@ -110,19 +110,19 @@
 ✅ Roster UI with Search and Status Filtering
 ✅ Video call infrastructure (Daily.co, Signaling, Timeout logic)
 ✅ Call modals (incoming/outgoing)
-✅ FCM push notifications (Infrastructure active, Settings page added)
+✅ FCM push notifications (Rich actions, Token cleanup)
 ✅ Mobile-responsive Sidebar and Layout
-✅ PWA manifest configured
+✅ PWA manifest & Install Prompt
 
 **Remaining Gaps:**
 ❌ **Tests:** Zero test coverage (Unit/E2E)
 ❌ **Daily.co API Key:** Needs to be configured in `.env`
-❌ **Rich Notifications:** Action buttons in push notifications (Phase 2)
+❌ **GitHub CI/CD:** External setup required.
 
 **Next Steps:**
 1. **Configuration:** Add `VITE_DAILY_API_KEY` to `.env`
-2. **Testing:** Implement critical path tests
-3. **Deployment:** Set up CI/CD pipeline
+2. **Deployment:** Deploy Cloud Functions (`firebase deploy --only functions`)
+3. **Testing:** Manual verification of Call Flow and Push Notifications.
 
 ---
 
