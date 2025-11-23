@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { auth } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { usePresence } from '../../hooks/usePresence'; // Import presence hook
-import { LogOut, Users, History, Settings, Shield, Menu, X } from 'lucide-react';
+import { LogOut, Users, History, Settings, Shield, Menu, X, HelpCircle } from 'lucide-react';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, isAdmin } = useAuth();
@@ -16,6 +16,16 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   const handleLogout = async () => {
     try {
+      // Explicitly set status to offline in RTDB before signing out
+      // This is redundant to onDisconnect but faster/cleaner
+      if (currentUser?.uid) {
+          const { ref, set, serverTimestamp } = await import('firebase/database');
+          const { rtdb } = await import('../../config/firebase');
+          await set(ref(rtdb, '/status/' + currentUser.uid), {
+              state: 'offline',
+              last_changed: serverTimestamp(),
+          });
+      }
       await auth.signOut();
       navigate('/login');
     } catch (error) {
@@ -54,6 +64,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
           <NavItem to="/dashboard" icon={Users}>Roster</NavItem>
           <NavItem to="/history" icon={History}>Call History</NavItem>
           <NavItem to="/settings" icon={Settings}>Settings</NavItem>
+          <NavItem to="/help" icon={HelpCircle}>Help & FAQ</NavItem>
           
           {isAdmin && (
             <NavItem to="/admin" icon={Shield}>Admin Panel</NavItem>
@@ -102,6 +113,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               <NavItem to="/dashboard" icon={Users}>Roster</NavItem>
               <NavItem to="/history" icon={History}>Call History</NavItem>
               <NavItem to="/settings" icon={Settings}>Settings</NavItem>
+              <NavItem to="/help" icon={HelpCircle}>Help & FAQ</NavItem>
               
               {isAdmin && (
                 <NavItem to="/admin" icon={Shield}>Admin Panel</NavItem>

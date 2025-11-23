@@ -26,3 +26,25 @@ messaging.onBackgroundMessage((payload) => {
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+self.addEventListener('notificationclick', function(event) {
+  console.log('[firebase-messaging-sw.js] Notification click Received.', event);
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({type: 'window', includeUncontrolled: true}).then(function(windowClients) {
+      // Check if there is already a window/tab open with the target URL
+      for (var i = 0; i < windowClients.length; i++) {
+        var client = windowClients[i];
+        // Check for dashboard or root url
+        if ((client.url.indexOf('/dashboard') !== -1 || client.url.indexOf(self.registration.scope) !== -1) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If not, open a new window
+      if (clients.openWindow) {
+        return clients.openWindow('/dashboard');
+      }
+    })
+  );
+});
+
